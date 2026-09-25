@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e6e9ef">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<script src="js/theme-init.js"></script>
+<link rel="manifest" href="manifest-admin.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Admin — eFootball Championship</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap" hidden>
+  <form id="loginForm" class="glass login-card">
+    <div class="brand" style="margin-bottom:20px;"><span class="dot"></span> Admin sign in</div>
+    <div class="field">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" required autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    <div id="loginMsg" class="msg"></div>
+    <p class="hint" style="margin-top:16px;">Only accounts on the admin list can use this panel.</p>
+  </form>
+</div>
+
+<!-- DASHBOARD -->
+<div class="admin-shell" id="adminShell" hidden>
+
+  <header class="admin-topbar">
+    <span class="brand"><span class="dot"></span> Admin</span>
+    <div class="admin-topbar-actions">
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>
+      </button>
+      <a class="hint" id="viewSiteLink" href="#" target="_blank" rel="noopener" hidden>View site</a>
+      <button type="button" class="btn btn-ghost btn-sm" id="logoutBtn">Sign out</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <section id="adminTeams" class="admin-view active">
+      <h2>Registered teams</h2>
+      <p class="hint" style="margin-bottom:16px;">Secret codes are stored scrambled and can't be read — not even here. If a player loses theirs, use <strong>New code</strong> and send them the one it shows.</p>
+      <div class="field" style="max-width:340px;">
+        <label for="teamsSearch">Search by team, owner or phone</label>
+        <input id="teamsSearch" type="search" placeholder="e.g. FC Nightfall" autocomplete="off">
+      </div>
+      <div id="teamsAdminTable"></div>
+    </section>
+
+    <section id="adminGroups" class="admin-view">
+      <h2>Group stage</h2>
+      <p class="hint" id="groupsLockedNote" hidden>Groups are locked once the group stage has started — use "Approvals" and "Fixtures" to run it from here.</p>
+      <p class="hint" id="groupsUnavailableNote" hidden>Groups can only be set up during registration.</p>
+
+      <div id="groupsAdminBody">
+        <form id="addGroupForm" class="glass glass-pad">
+          <h3>Add a group</h3>
+          <div class="field">
+            <label for="newGroupName">Group name</label>
+            <input id="newGroupName" type="text" placeholder="e.g. Group A" maxlength="40" required>
+          </div>
+          <button type="submit" class="btn btn-block">Add group</button>
+          <div id="addGroupMsg" class="msg"></div>
+        </form>
+
+        <h3 style="margin-top:24px;">Groups &amp; team assignment</h3>
+        <p class="hint" style="margin-bottom:12px;">Assign every active team to a group before starting the group stage.</p>
+        <div id="groupsList"></div>
+
+        <div class="glass glass-pad" id="startGroupWrap" style="margin-top:24px;">
+          <h3>Start the group stage</h3>
+          <p class="hint" style="margin-bottom:14px;">Builds a round-robin fixture list inside every group and locks group assignment.</p>
+          <button type="button" id="startGroupStageBtn" class="btn btn-primary" disabled>Start group stage</button>
+          <div id="startGroupStageMsg" class="msg"></div>
+        </div>
+
+        <h3 style="margin-top:30px;">Standings</h3>
+        <div id="groupsStandingsAdmin"></div>
+
+        <div class="glass glass-pad" id="finalizeGroupWrap" style="margin-top:20px;">
+          <h3>Finalize group stage &amp; build the bracket</h3>
+          <p class="hint" style="margin-bottom:14px;">Every group match must be approved first. This seeds the knockout bracket with the qualifiers and opens Round 1.</p>
+          <button type="button" id="finalizeGroupsBtn" class="btn btn-primary" disabled>Finalize &amp; start knockouts</button>
+          <div id="finalizeGroupsMsg" class="msg"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminBracket" class="admin-view">
+      <h2>Bracket builder</h2>
+      <p class="hint">Optional: skip the group stage entirely and build the knockout bracket directly. If you're running groups, use the "Groups" tab instead.</p>
+      <p class="hint" id="bracketSkipGroupsNote" hidden>Groups are set up for this tournament — remove all groups first if you want to build the knockout bracket directly instead.</p>
+      <p class="hint" id="bracketLockedNote" hidden>The bracket is locked — fixtures can't be added or removed once the tournament is under way. Use "Fixtures" to manage things from here.</p>
+
+      <div class="grid-2" id="bracketForms">
+        <form id="bracketAddForm" class="glass glass-pad">
+          <h3>Add Round 1 fixture</h3>
+          <div class="field">
+            <label for="fixtureTeam1">Team A</label>
+            <select id="fixtureTeam1" required></select>
+          </div>
+          <div class="field">
+            <label for="fixtureTeam2">Team B</label>
+            <select id="fixtureTeam2" required></select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Add fixture</button>
+          <div id="bracketMsg" class="msg"></div>
+        </form>
+
+        <form id="byeForm" class="glass glass-pad">
+          <h3>Give a team a bye</h3>
+          <p class="hint">Use this for odd numbers of teams — the team auto-advances once confirmed.</p>
+          <div class="field">
+            <label for="byeTeam">Team</label>
+            <select id="byeTeam" required></select>
+          </div>
+          <button type="submit" class="btn btn-block">Add bye</button>
+          <div id="byeMsg" class="msg"></div>
+        </form>
+      </div>
+
+      <h3 style="margin-top:30px;">Round 1 fixtures</h3>
+      <div id="round1List" class="glass glass-pad"></div>
+
+      <button type="button" id="finalizeBtn" class="btn btn-primary" style="margin-top:20px;" disabled>Finalize bracket &amp; start tournament</button>
+      <div id="finalizeMsg" class="msg"></div>
+    </section>
+
+    <section id="adminApprovals" class="admin-view">
+      <h2>Results to approve</h2>
+      <p class="hint" style="margin-bottom:16px;">Each player's own claim is shown under the fixture. When both agree the form is pre-filled — check it and approve. Approved a wrong score? Open <strong>Fixtures</strong> and use <strong>Edit result</strong>.</p>
+      <div class="field" style="max-width:340px;">
+        <label for="approvalsSearch">Search by team name</label>
+        <input id="approvalsSearch" type="search" placeholder="e.g. FC Nightfall" autocomplete="off">
+      </div>
+      <div id="approvalsList"></div>
+    </section>
+
+    <section id="adminMatches" class="admin-view">
+      <h2>All fixtures</h2>
+      <div class="field" style="max-width:340px;">
+        <label for="matchesSearch">Search by team name</label>
+        <input id="matchesSearch" type="search" placeholder="e.g. FC Nightfall" autocomplete="off">
+      </div>
+      <div id="matchesAdminList"></div>
+    </section>
+
+    <section id="adminSettings" class="admin-view">
+      <h2>Settings</h2>
+      <form id="settingsForm" class="glass glass-pad" style="max-width:420px;">
+        <div class="field">
+          <label for="settingsName">Tournament name</label>
+          <input id="settingsName" type="text" required maxlength="60">
+        </div>
+        <div class="field">
+          <label>Tournament status</label>
+          <div id="settingsStatus" class="badge" style="width:fit-content;">—</div>
+        </div>
+        <div class="field">
+          <label for="settingsQualifiers">Qualifiers per group</label>
+          <input id="settingsQualifiers" type="number" min="1" max="8" required>
+          <div class="hint">How many teams advance from each group. (Groups × qualifiers must total a power of two — 2, 4, 8, 16…)</div>
+        </div>
+        <div class="field">
+          <label for="settingsWindow">Score entry opens (minutes before kick-off)</label>
+          <input id="settingsWindow" type="number" min="0" max="180" required>
+          <div class="hint">Players see their match and can submit a score only from this moment. 0 = exactly at kick-off.</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <div id="settingsMsg" class="msg"></div>
+      </form>
+
+      <h3 style="margin-top:30px;">Recent admin activity</h3>
+      <div id="auditList" class="glass glass-pad"></div>
+
+      <div class="glass glass-pad danger-zone" style="max-width:420px; margin-top:24px;">
+        <h3 style="margin:0 0 6px; color:var(--accent-red);">Danger zone</h3>
+        <p class="hint" style="margin-bottom:16px;">Wipes every team and match and reopens registration from zero. Cannot be undone.</p>
+        <button type="button" id="resetTournamentBtn" class="btn btn-danger">Reset tournament</button>
+        <div id="resetMsg" class="msg"></div>
+      </div>
+    </section>
+
+  </main>
+
+<!-- BOTTOM TAB BAR — the only navigation in the admin panel -->
+  <nav class="bottom-nav admin-bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="admin-nav-btn tab-btn bottom-tab active" data-target="adminTeams">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3-5.5 7-5.5s7 2.2 7 5.5"/><circle cx="17" cy="7" r="2.4"/><path d="M16.5 14.6c2.9.4 5 2.4 5 5.4"/></svg>
+        <span>Teams</span>
+      </button>
+      <button class="admin-nav-btn tab-btn bottom-tab" data-target="adminGroups">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8.5 4.5v15"/></svg>
+        <span>Groups</span>
+      </button>
+      <button class="admin-nav-btn tab-btn bottom-tab" data-target="adminBracket">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4v4H4zM4 15h4v4H4zM16 10h4v4h-4z"/><path d="M8 7h4a2 2 0 0 1 2 2v1M8 17h4a2 2 0 0 1 2-2v-1"/></svg>
+        <span>Bracket</span>
+      </button>
+      <button class="admin-nav-btn tab-btn bottom-tab" data-target="adminApprovals" >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+        <span id="approvalsNavBadge" class="nav-badge-dot" style="display:none;"></span>
+        <span>Approvals</span>
+      </button>
+      <button class="admin-nav-btn tab-btn bottom-tab" data-target="adminMatches">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3v3M16 3v3"/></svg>
+        <span>Fixtures</span>
+      </button>
+      <button class="admin-nav-btn tab-btn bottom-tab" data-target="adminSettings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.7 7.7 0 0 0 0-3l1.9-1.5-2-3.4-2.2.9a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.2-.9-2 3.4L4.6 10.5a7.7 7.7 0 0 0 0 3L2.7 15l2 3.4 2.2-.9a7.6 7.6 0 0 0 2.6 1.5l.5 2.5h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.2.9 2-3.4z"/></svg>
+        <span>Settings</span>
+      </button>
+    </div>
+  </nav>
+
+
+</div>
+
+<!-- Enter / edit a result -->
+<div class="modal-backdrop" id="resultModal">
+  <div class="glass modal">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <div id="resultModalBody"></div>
+  </div>
+</div>
+
+<!-- Shows a freshly issued team code (once) -->
+<div class="modal-backdrop" id="codeModal">
+  <div class="glass modal">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h3>New code for <span id="codeModalTeam"></span></h3>
+    <p class="hint">Send this to the player now. It is stored scrambled, so it can't be shown again. The old code no longer works.</p>
+    <div class="code-reveal" id="codeModalValue"></div>
+    <div class="pill-row">
+      <button type="button" class="btn btn-sm" id="codeModalCopy">Copy code</button>
+      <button type="button" class="btn btn-primary btn-sm" data-close-modal>Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
